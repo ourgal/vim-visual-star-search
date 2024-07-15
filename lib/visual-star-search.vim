@@ -1,35 +1,56 @@
 vim9script
 # From http://got-ravings.blogspot.com/2008/07/vim-pr0n-visual-search-mappings.html
 
-# https://stackoverflow.com/a/61486601
-def GetVisualSelection(mode: string): string
-    # call with visualmode() as the argument
-    const [line_start, column_start] = getpos("'<")[1 : 2]
-    const [line_end, column_end] = getpos("'>")[1 : 2]
-    final lines = getline(line_start, line_end)
+type Lines = list<string>
+
+class Vselection
+  const line_start: number
+  const column_start: number
+
+  const line_end: number
+  const column_end: number
+
+  const lines: Lines
+
+  def new()
+    [this.line_start, this.column_start] = getpos("'<")[1 : 2]
+    [this.line_end, this.column_end] = getpos("'>")[1 : 2]
+    this.lines = getline(this.line_start, this.line_end)
+  enddef
+  
+  def WordMode(lines: Lines): Lines
+    lines[-1] = lines[-1][: this.column_end - (&selection == 'inclusive' ? 1 : 2)]
+    lines[0] = lines[0][this.column_start - 1 :]
+    return lines
+  enddef
+
+  def BlockMode(lines: Lines): Lines
+    var i = 0
+    for line in lines
+        lines[i] = line[this.column_start - 1 : this.column_end - (&selection == 'inclusive' ? 1 : 2)]
+        i += 1
+    endfor
+    return lines
+  enddef
+
+  def String(mode: string): string
     if mode == 'v'
-        # Must trim the end before the start, the beginning will shift left.
-        lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
-        lines[0] = lines[0][column_start - 1 :]
+      return this.lines->deepcopy()->this.WordMode()->join('\n')
     elseif mode == 'V'
-        # Line mode no need to trim start or end
+      return this.lines->join("\n")
     elseif mode == "\<c-v>"
-        # Block mode, trim every line
-        final new_lines = []
-        var i = 0
-        for line in lines
-            lines[i] = line[column_start - 1 : column_end - (&selection == 'inclusive' ? 1 : 2)]
-            i += 1
-        endfor
+      return this.lines->deepcopy()->this.BlockMode()->join('\n')
     else
         return ''
     endif
-    return join(lines, "\n")
-enddef
+  enddef
+
+endclass
 
 # makes * and # work on visual mode too.
-def SearchString(cmdtype: string): string
-    return '\V' .. GetVisualSelection(visualmode())->escape(cmdtype .. '\')->substitute('\n', '\\n', 'g')
+export def SearchString(cmdtype: string): string
+  const selection = Vselection.new()
+  return '\V' .. visualmode()->selection.String()->escape(cmdtype .. '\')->substitute('\n', '\\n', 'g')
 enddef
 
 export def Vimgrep()

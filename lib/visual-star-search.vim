@@ -41,16 +41,21 @@ class Vselection
     elseif mode == "\<c-v>"
       return this.lines->deepcopy()->this.BlockMode()->join('\n')
     else
-        return ''
+      return ''
     endif
   enddef
 
 endclass
 
 # makes * and # work on visual mode too.
-export def SearchString(cmdtype: string): string
+export def Search(cmdtype: string)
+  normal 
   const selection = Vselection.new()
-  return '\V' .. visualmode()->selection.String()->escape(cmdtype .. '\')->substitute('\n', '\\n', 'g')
+  const s = '\V' .. visualmode()->selection.String()->escape(cmdtype .. '\')->substitute('\n', '\\n', 'g')
+  setreg('/', s)
+  if cmdtype == 'v'
+    execute 'vimgrep // **'
+  endif
 enddef
 
 export def Vimgrep()

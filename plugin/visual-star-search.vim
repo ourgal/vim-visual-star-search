@@ -6,15 +6,18 @@ vim9script
 
 import autoload '../lib/visual-star-search.vim' as lib
 
-command VisualStarSearchVimGrep lib.Vimgrep()
+nnoremap <Plug>VisualStarSearchVimGrep <ScriptCmd>lib.Vimgrep()<CR>
+xnoremap <Plug>VisualStarSearch/ <ScriptCmd>lib.Search('/')<CR>
+xnoremap <Plug>VisualStarSearch? <ScriptCmd>lib.Search('?')<CR>
+vnoremap <Plug>VisualStarSearchv <ScriptCmd>lib.Search('v')<CR>
 
-xnoremap * :<C-u>/<C-R>=<SID>lib.SearchString('/')<CR><CR>n
-xnoremap # :<C-u>?<C-R>=<SID>lib.SearchString('?')<CR><CR>n
+xnoremap * <Plug>VisualStarSearch/n
+xnoremap # <Plug>VisualStarSearch?n
 
 # recursively vimgrep for word under cursor or selection if you hit leader-star
 if maparg('<leader>*', 'n') == ''
-  nmap <leader>* <ScriptCmd>VisualStarSearchVimGrep<cr>
+  nmap <leader>* <Plug>VisualStarSearchVimGrep
 endif
 if maparg('<leader>*', 'v') == ''
-  vmap <leader>* :<C-u>vimgrep /<c-r>=<SID>lib.SearchString('/')<cr>/ **<CR>
+  vmap <leader>* <Plug>VisualStarSearchv
 endif
